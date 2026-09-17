@@ -1,7 +1,11 @@
-﻿using JobApplication.Application.DTOs;
+using JobApplication.Application.DTOs;
 using JobApplication.Application.Services;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using System;
+using System.Collections.Generic;
+using System.Threading.Tasks;
 
 namespace JobApplication.API.Controllers
 {
@@ -24,6 +28,29 @@ namespace JobApplication.API.Controllers
             {
                 id = id 
             }); 
+        }
+
+        [Authorize]
+        [HttpPut("{id}/close")]
+        public async Task<IActionResult> Close(int id)
+        {
+            try
+            {
+                await _JobService.Close(id);
+                return Ok(new { message = "Job closed successfully." });
+            }
+            catch (KeyNotFoundException ex)
+            {
+                return NotFound(new { message = ex.Message });
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                return StatusCode(StatusCodes.Status403Forbidden, new { message = ex.Message });
+            }
+            catch (InvalidOperationException ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
         }
     }
 }

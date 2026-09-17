@@ -1,4 +1,4 @@
-﻿using JobApplication.Domain.Entities;
+using JobApplication.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
 
 
@@ -9,6 +9,7 @@ namespace JobApplication.Infrastructure.Persistence
         public DbSet<Job> Jobs { get; set; }
         public DbSet<Candidate> Candidates { get; set; }
         public DbSet<JobCandidateApplication> JobCandidateApplications { get; set; }
+        public DbSet<User> Users { get; set; }
         public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options)
         : base(options)
         {

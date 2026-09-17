@@ -1,4 +1,4 @@
-﻿using JobApplication.Application.Interfaces;
+using JobApplication.Application.Interfaces;
 using JobApplication.Domain.Entities;
 using JobApplication.Infrastructure.Persistence;
 using System;
@@ -19,6 +19,10 @@ namespace JobApplication.Infrastructure.Repositories
         public async Task InsertAsync(Job job )
         {
             await _context.Jobs.AddAsync(job);
+        }
+        public async Task<Job?> GetByIdAsync(int id)
+        {
+            return await _context.Jobs.FindAsync(id);
         }
         public void Update(Job job)
         {

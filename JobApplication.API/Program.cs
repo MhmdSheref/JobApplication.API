@@ -1,4 +1,6 @@
 
+using JobApplication.API.Authentication;
+using JobApplication.API.Services;
 using JobApplication.Application.Interfaces;
 using JobApplication.Application.Services;
 using JobApplication.Infrastructure.Persistence;
@@ -27,6 +29,19 @@ namespace JobApplication.API
 
             builder.Services.AddScoped<JobService>();
             builder.Services.AddScoped<IJobRepository, JobRepository>();
+            builder.Services.AddScoped<ApplicationService>();
+            builder.Services.AddScoped<IApplicationRepository, ApplicationRepository>();
+            builder.Services.AddScoped<IUserRepository, UserRepository>();
+            builder.Services.AddScoped<AuthService>();
+
+            builder.Services.AddHttpContextAccessor();
+            builder.Services.AddScoped<ICurrentUserService, CurrentUserService>();
+            builder.Services.AddSingleton<TokenService>();
+            builder.Services.AddSingleton<ITokenService>(sp => sp.GetRequiredService<TokenService>());
+
+            builder.Services.AddAuthentication("Bearer")
+                .AddScheme<Microsoft.AspNetCore.Authentication.AuthenticationSchemeOptions, JobApplication.API.Authentication.TokenAuthenticationHandler>("Bearer", null);
+            builder.Services.AddAuthorization();
 
             // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
             builder.Services.AddOpenApi();
@@ -42,6 +57,7 @@ namespace JobApplication.API
 
             app.UseHttpsRedirection();
 
+            app.UseAuthentication();
             app.UseAuthorization();
 
 
