@@ -1,4 +1,5 @@
 using JobApplication.Application.DTOs;
+using JobApplication.Application.Features.JobCandidateApplications.Commands.CancelApplication;
 using JobApplication.Application.Features.JobCandidateApplications.Commands.CreateJobCandidateApplication;
 using JobApplication.Application.Features.JobCandidateApplications.Commands.UpdateJobCandidateApplicationStatus;
 using JobApplication.Application.Features.JobCandidateApplications.Queries.GetAllJobCandidateApplications;
@@ -83,6 +84,31 @@ namespace JobApplication.API.Controllers
             var job = await _mediator.Send(new UpdateJobCandidateApplicationStatusCommand() { Id = id, Status = status });
             if (job == null) return NotFound();
             return Ok(new { id = job.Id });
+        }
+        /// <summary>
+        /// Cancels a job candidate application.
+        /// </summary>
+        /// <param name="id">The application id.</param>
+        /// <returns>No content on success.</returns>
+        [HttpDelete("{id}")]
+        [ProducesResponseType(StatusCodes.Status204NoContent)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        public async Task<IActionResult> Cancel(int id)
+        {
+            try
+            {
+                await _mediator.Send(new CancelApplicationCommand(id));
+                return NoContent();
+            }
+            catch (KeyNotFoundException ex)
+            {
+                return NotFound(new { message = ex.Message });
+            }
+            catch (InvalidOperationException ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
         }
     }
 }

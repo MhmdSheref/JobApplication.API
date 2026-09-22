@@ -1,4 +1,5 @@
 using JobApplication.API.Controllers;
+using JobApplication.Application.Features.JobCandidateApplications.Commands.CancelApplication;
 using JobApplication.Application.Interfaces;
 using JobApplication.Application.Services;
 using JobApplication.Domain.Entities;
@@ -130,6 +131,74 @@ namespace JobApplication.Tests
 
             var badRequestResult = Assert.IsType<BadRequestObjectResult>(result);
             Assert.Equal(400, badRequestResult.StatusCode);
+        }
+
+        // 8. CQRS Handler: Non-existent application throws KeyNotFoundException
+        [Fact]
+        public async Task CancelApplicationCommandHandler_NonExistentApplication_ThrowsKeyNotFoundException()
+        {
+            var fakeRepo = new FakeApplicationRepository();
+            var handler = new CancelApplicationCommandHandler(fakeRepo);
+
+            await Assert.ThrowsAsync<KeyNotFoundException>(() =>
+                handler.Handle(new CancelApplicationCommand(999), default));
+        }
+
+        // 9. CQRS Handler: Applied application cancels successfully and sets timestamp
+        [Fact]
+        public async Task CancelApplicationCommandHandler_AppliedApplication_CancelsSuccessfully()
+        {
+            var app = new JobCandidateApplication
+            {
+                Id = 1,
+                JobApplicationStatus = JobApplicationStatus.Applied
+            };
+            var fakeRepo = new FakeApplicationRepository(app);
+            var handler = new CancelApplicationCommandHandler(fakeRepo);
+
+            var before = DateTime.UtcNow;
+            await handler.Handle(new CancelApplicationCommand(1), default);
+            var after = DateTime.UtcNow;
+
+            Assert.Equal(JobApplicationStatus.Cancelled, app.JobApplicationStatus);
+            Assert.NotNull(app.CancelledAt);
+            Assert.InRange(app.CancelledAt.Value, before, after);
+            Assert.True(fakeRepo.SaveChangesCalled);
+        }
+
+        // 10. CQRS Handler: UnderReview application cancels successfully
+        [Fact]
+        public async Task CancelApplicationCommandHandler_UnderReviewApplication_CancelsSuccessfully()
+        {
+            var app = new JobCandidateApplication
+            {
+                Id = 1,
+                JobApplicationStatus = JobApplicationStatus.UnderReview
+            };
+            var fakeRepo = new FakeApplicationRepository(app);
+            var handler = new CancelApplicationCommandHandler(fakeRepo);
+
+            await handler.Handle(new CancelApplicationCommand(1), default);
+
+            Assert.Equal(JobApplicationStatus.Cancelled, app.JobApplicationStatus);
+            Assert.NotNull(app.CancelledAt);
+            Assert.True(fakeRepo.SaveChangesCalled);
+        }
+
+        // 11. CQRS Handler: Disallowed status throws InvalidOperationException
+        [Fact]
+        public async Task CancelApplicationCommandHandler_DisallowedStatus_ThrowsInvalidOperationException()
+        {
+            var app = new JobCandidateApplication
+            {
+                Id = 1,
+                JobApplicationStatus = JobApplicationStatus.Accepted
+            };
+            var fakeRepo = new FakeApplicationRepository(app);
+            var handler = new CancelApplicationCommandHandler(fakeRepo);
+
+            await Assert.ThrowsAsync<InvalidOperationException>(() =>
+                handler.Handle(new CancelApplicationCommand(1), default));
         }
 
         // Minimal fake repository for test isolation without external mocking packages
