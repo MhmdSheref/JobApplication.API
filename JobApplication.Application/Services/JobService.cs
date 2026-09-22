@@ -1,18 +1,21 @@
 using JobApplication.Application.DTOs;
 using JobApplication.Application.Interfaces;
 using JobApplication.Domain.Entities;
+using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
+using System.Threading.Tasks;
 
 namespace JobApplication.Application.Services
 {
-    public class JobService
+    public class JobService : IJobService
     {
-        private readonly IJobRepository _jobRepository;
-        private readonly ICurrentUserService _currentUserService;
+        private readonly IRepository<Job> _jobRepository;
+        private readonly ICurrentUserService? _currentUserService;
 
-        public JobService(IJobRepository jobRepository, ICurrentUserService currentUserService)
+        public JobService(IRepository<Job> jobRepository, ICurrentUserService? currentUserService = null)
         {
             _jobRepository = jobRepository;
             _currentUserService = currentUserService;
@@ -25,22 +28,34 @@ namespace JobApplication.Application.Services
                 Title = createJobDto.Title,
                 Description = createJobDto.Description,
                 IsActive = true,
-                RecruiterId = _currentUserService.RecruiterId
+                RecruiterId = _currentUserService?.RecruiterId
             };
-            await _jobRepository.InsertAsync(job);
+            await _jobRepository.AddAsync(job);
             await _jobRepository.SaveChangesAsync();
 
-            return job.Id; 
+            return job.Id;
+        }
+
+        public IEnumerable<Job> GetAll()
+        {
+            var jobs = _jobRepository.Get().ToList();
+            return jobs;
+        }
+
+        public Job? GetById(int id)
+        {
+            var job = _jobRepository.Get().FirstOrDefault(j => j.Id == id);
+            return job;
         }
 
         public async Task Close(int id)
         {
-            if (!_currentUserService.IsAuthenticated || _currentUserService.Role != "Recruiter" || !_currentUserService.RecruiterId.HasValue)
+            if (_currentUserService == null || !_currentUserService.IsAuthenticated || _currentUserService.Role != "Recruiter" || !_currentUserService.RecruiterId.HasValue)
             {
                 throw new UnauthorizedAccessException("Only authenticated recruiters can close jobs.");
             }
 
-            var job = await _jobRepository.GetByIdAsync(id);
+            var job = await _jobRepository.Get().FirstOrDefaultAsync(j => j.Id == id);
             if (job == null)
             {
                 throw new KeyNotFoundException($"Job with id {id} was not found.");
