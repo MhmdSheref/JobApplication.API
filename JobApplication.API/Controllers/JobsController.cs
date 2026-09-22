@@ -1,4 +1,5 @@
 using JobApplication.Application.DTOs;
+using JobApplication.Application.Features.Jobs.Commands.CloseJob;
 using JobApplication.Application.Features.Jobs.Commands.CreateJob;
 using JobApplication.Application.Features.Jobs.Queries.GetAllJobs;
 using JobApplication.Application.Features.Jobs.Queries.GetJobById;
@@ -78,18 +79,23 @@ namespace JobApplication.API.Controllers
             });
         }
 
+        /// <summary>
+        /// Closes an active job posting.
+        /// </summary>
+        /// <param name="id">The id of the job posting to close.</param>
+        /// <returns>A confirmation message if the job was successfully closed.</returns>
         [Authorize]
         [HttpPut("{id}/close")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(StatusCodes.Status403Forbidden)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
         public async Task<IActionResult> Close(int id)
         {
-            if (_jobService == null)
-            {
-                throw new InvalidOperationException("JobService is not available.");
-            }
-
             try
             {
-                await _jobService.Close(id);
+                await _mediator.Send(new CloseJobCommand(id));
                 return Ok(new { message = "Job closed successfully." });
             }
             catch (KeyNotFoundException ex)
