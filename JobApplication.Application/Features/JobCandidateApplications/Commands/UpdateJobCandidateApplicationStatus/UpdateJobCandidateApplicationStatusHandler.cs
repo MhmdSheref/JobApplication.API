@@ -11,10 +11,12 @@ namespace JobApplication.Application.Features.JobCandidateApplications.Commands.
     public class UpdateJobCandidateApplicationStatusHandler : IRequestHandler<UpdateJobCandidateApplicationStatusCommand, JobCandidateApplication?>
     {
         private readonly IRepository<JobCandidateApplication> _jobApplicationRepository;
+        private readonly IBackgroundJobScheduler _backgroundJobScheduler;
 
-        public UpdateJobCandidateApplicationStatusHandler(IRepository<JobCandidateApplication> jobApplicationRepository)
+        public UpdateJobCandidateApplicationStatusHandler(IRepository<JobCandidateApplication> jobApplicationRepository, IBackgroundJobScheduler backgroundJobScheduler)
         {
             _jobApplicationRepository = jobApplicationRepository;
+            _backgroundJobScheduler = backgroundJobScheduler;
         }
 
         public async Task<JobCandidateApplication?> Handle(UpdateJobCandidateApplicationStatusCommand request, CancellationToken cancellationToken)
@@ -26,6 +28,8 @@ namespace JobApplication.Application.Features.JobCandidateApplications.Commands.
             }
             jobApplication.UpdateStatus(request.Status);
             await _jobApplicationRepository.SaveChangesAsync();
+
+            _backgroundJobScheduler.Schedule<INotificationService>(s=>s.NotifyRecruiter(jobApplication.Id) , TimeSpan.FromMinutes(2)); 
             return jobApplication;
         }
     }

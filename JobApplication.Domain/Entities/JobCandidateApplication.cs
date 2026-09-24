@@ -29,7 +29,7 @@ namespace JobApplication.Domain.Entities
 
         public JobCandidateApplication()
         {
-            JobApplicationStatus = JobApplicationStatus.Applied;
+            JobApplicationStatus = JobApplicationStatus.Applied; 
             AppliedAt = DateTime.UtcNow;
         }
 

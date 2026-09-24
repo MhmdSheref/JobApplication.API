@@ -1,14 +1,16 @@
-using System.Reflection;
+using Hangfire;
 using JobApplication.API.Authentication;
 using JobApplication.API.Services;
 using JobApplication.Application.Interfaces;
 using JobApplication.Application.Services;
 using JobApplication.Infrastructure.Persistence;
 using JobApplication.Infrastructure.Repositories;
+using JobApplication.Infrastructure.Services;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.OpenApi;
 using Microsoft.OpenApi.Models;
+using System.Reflection;
 
 namespace JobApplication.API
 {
@@ -38,6 +40,8 @@ namespace JobApplication.API
             builder.Services.AddScoped<IUserRepository, UserRepository>();
             builder.Services.AddScoped<AuthService>();
             builder.Services.AddScoped(typeof(IRepository<>), typeof(Repository<>));
+            builder.Services.AddScoped<IBackgroundJobScheduler, HangfireBackgroundJobScheduler>();
+            builder.Services.AddScoped<INotificationService, EmailNotificationService>();
 
             builder.Services.AddHttpContextAccessor();
             builder.Services.AddScoped<ICurrentUserService, CurrentUserService>();
@@ -69,6 +73,14 @@ namespace JobApplication.API
                 }
             });
 
+            builder.Services.AddHangfire(config => config
+                .UseSimpleAssemblyNameTypeSerializer()
+                .UseRecommendedSerializerSettings()
+                .UseSqlServerStorage(
+                    builder.Configuration.GetConnectionString("HangfireConnection")));
+
+            builder.Services.AddHangfireServer();
+
             var app = builder.Build();
 
             // Configure the HTTP request pipeline.
@@ -85,6 +97,8 @@ namespace JobApplication.API
 
             app.UseAuthentication();
             app.UseAuthorization();
+
+            app.UseHangfireDashboard("/hangfire");
 
             app.MapControllers();
 
