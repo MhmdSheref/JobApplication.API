@@ -1,3 +1,4 @@
+using Hangfire;
 using JobApplication.Application.Interfaces;
 using JobApplication.Domain.Entities;
 using MediatR;
@@ -54,6 +55,8 @@ namespace JobApplication.Application.Features.JobCandidateApplications.Commands.
                 _applicationRepository.Update(application);
                 await _applicationRepository.SaveChangesAsync();
             }
+
+            BackgroundJob.Enqueue<INotificationService>(x => x.NotifyCandidate(request.ApplicationId));
         }
     }
 }

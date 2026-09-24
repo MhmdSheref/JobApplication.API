@@ -42,6 +42,7 @@ namespace JobApplication.API
             builder.Services.AddScoped(typeof(IRepository<>), typeof(Repository<>));
             builder.Services.AddScoped<IBackgroundJobScheduler, HangfireBackgroundJobScheduler>();
             builder.Services.AddScoped<INotificationService, EmailNotificationService>();
+            builder.Services.AddScoped<IJobCleanupService, JobCleanupService>();
 
             builder.Services.AddHttpContextAccessor();
             builder.Services.AddScoped<ICurrentUserService, CurrentUserService>();
@@ -99,6 +100,11 @@ namespace JobApplication.API
             app.UseAuthorization();
 
             app.UseHangfireDashboard("/hangfire");
+
+            RecurringJob.AddOrUpdate<IJobCleanupService>(
+                "auto-close-expired-jobs",
+                service => service.AutoCloseExpiredJobsAsync(CancellationToken.None),
+                Cron.Daily);
 
             app.MapControllers();
 

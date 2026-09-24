@@ -13,6 +13,7 @@ namespace JobApplication.Domain.Entities
         public int? RecruiterId { get; set; }
         public DateTime? ClosedAt { get; set; }
         public int? ClosedBy { get; set; }
+        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
         public bool IsClosed => ClosedAt != null;
 
@@ -25,6 +26,17 @@ namespace JobApplication.Domain.Entities
 
             ClosedAt = DateTime.UtcNow;
             ClosedBy = recruiterId;
+            IsActive = false;
+        }
+
+        public void AutoClose()
+        {
+            if (IsClosed)
+            {
+                return;
+            }
+
+            ClosedAt = DateTime.UtcNow;
             IsActive = false;
         }
     }

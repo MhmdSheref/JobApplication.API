@@ -1,4 +1,4 @@
-﻿using Hangfire;
+using Hangfire;
 using JobApplication.Application.Interfaces;
 using System;
 using System.Collections.Generic;
@@ -23,6 +23,11 @@ namespace JobApplication.Infrastructure.Services
         public void Schedule<T>(Expression<Action<T>> methodCall , TimeSpan delay)
         {
             _backgroundJobClient.Schedule<T>(methodCall , delay);
+        }
+
+        public void AddOrUpdateRecurringJob<T>(string recurringJobId, Expression<Action<T>> methodCall, string cronExpression)
+        {
+            RecurringJob.AddOrUpdate<T>(recurringJobId, methodCall, cronExpression);
         }
     }
 }

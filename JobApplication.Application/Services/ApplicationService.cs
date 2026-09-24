@@ -1,3 +1,4 @@
+using Hangfire;
 using JobApplication.Application.Interfaces;
 using JobApplication.Domain.Entities;
 using System;
@@ -27,6 +28,8 @@ namespace JobApplication.Application.Services
 
             _applicationRepository.Update(application);
             await _applicationRepository.SaveChangesAsync();
+
+            BackgroundJob.Enqueue<INotificationService>(x => x.NotifyCandidate(id));
         }
     }
 }
